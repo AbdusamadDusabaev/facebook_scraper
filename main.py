@@ -88,6 +88,8 @@ def get_object_links(browser: webdriver.Chrome, url: str) -> List[str]:
         current_bs_object = BeautifulSoup(browser.page_source, "lxml")
         if current_bs_object == old_bs_object:
             break
+        if index == 2:
+            break
         old_bs_object = current_bs_object
     bs_object = BeautifulSoup(browser.page_source, "lxml")
     product_link_objects = bs_object.find_all(name="div", class_="x9f619 x78zum5 x1r8uery xdt5ytf x1iyjqo2 xs83m0k x1e558r4 x150jy0e xnpuxes x291uyu x1uepa24 x1iorvi4 xjkvuk6")
@@ -107,15 +109,16 @@ def get_object_info(browser: webdriver.Chrome, object_url: str) -> dict:
         for el in show_all_description:
             if el.text == "See more":
                 browser.execute_script("arguments[0].click();", el)
-                time.sleep(1)
+                time.sleep(2)
                 break
     except Exception as ex:
         pass
     bs_object = BeautifulSoup(browser.page_source, "lxml")
     title = bs_object.find(name="title").text
     description = bs_object.find(name="div", class_="xz9dl7a x4uap5 xsag5q8 xkhd6sd x126k92a").text
-    description = description.replace("See less", "").strip()
+    description = description.replace("See less", "").replace("See translation", "").strip()
     price = get_price(bs_object=bs_object)
+
     animal_friendly = get_animal_friendly(bs_object=bs_object)
     address = get_address(bs_object=bs_object)
     date_of_publication = get_date_of_publication(bs_object=bs_object)
@@ -142,7 +145,10 @@ def main() -> None:
     options = webdriver.ChromeOptions()
     options.add_argument(f"user-agent={ua_chrome}")
     options.add_argument("--disable-notifications")
+    options.add_argument("--no-sandbox")
     options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument('--disable-dev-shm-usage')
     browser = webdriver.Chrome(options=options)
     try:
         authorization(browser=browser)
@@ -151,6 +157,7 @@ def main() -> None:
         new_object_links = get_new_object_links(object_links=object_links, exist_object_links=exist_object_links)
         all_objects = list()
         exceptions = 0
+        print(len(new_object_links))
         for object_link in new_object_links:
             try:
                 sub_result = get_object_info(browser=browser, object_url=object_link)
@@ -162,7 +169,10 @@ def main() -> None:
                     options = webdriver.ChromeOptions()
                     options.add_argument(f"user-agent={ua_chrome}")
                     options.add_argument("--disable-notifications")
+                    options.add_argument("--no-sandbox")
                     options.add_argument("--headless")
+                    options.add_argument("--disable-gpu")
+                    options.add_argument('--disable-dev-shm-usage')
                     browser = webdriver.Chrome(options=options)
                     authorization(browser=browser)
                     sub_result = get_object_info(browser=browser, object_url=object_link)
